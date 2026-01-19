@@ -49,9 +49,13 @@ module.exports = {
                 return await interaction.editReply('❌ End date cannot be in the future.');
             }
 
-            // Check if bot has permission to read message history
-            if (!targetChannel.permissionsFor(interaction.client.user).has(PermissionFlagsBits.ReadMessageHistory)) {
+            // Check if bot has permission to read message history and send messages
+            const botPermissions = targetChannel.permissionsFor(interaction.client.user);
+            if (!botPermissions.has(PermissionFlagsBits.ReadMessageHistory)) {
                 return await interaction.editReply('❌ I don\'t have permission to read message history in that channel.');
+            }
+            if (!botPermissions.has(PermissionFlagsBits.SendMessages)) {
+                return await interaction.editReply('❌ I don\'t have permission to send messages in that channel.');
             }
 
             await interaction.editReply(`🔍 Fetching messages from ${targetChannel} between ${startDateStr} and ${endDateStr}...`);
@@ -66,17 +70,19 @@ module.exports = {
             // Generate resume
             const resume = generateChatResume(messages, startDate, endDate, targetChannel);
 
-            // Send resume (split if too long)
+            // Send resume to the channel (split if too long)
             if (resume.length <= 2000) {
-                await interaction.editReply(resume);
+                await targetChannel.send(resume);
             } else {
                 // Split into multiple messages
                 const chunks = splitMessage(resume, 2000);
-                await interaction.editReply(chunks[0]);
-                for (let i = 1; i < chunks.length; i++) {
-                    await interaction.followUp(chunks[i]);
+                for (const chunk of chunks) {
+                    await targetChannel.send(chunk);
                 }
             }
+
+            // Confirm to the user who invoked the command
+            await interaction.editReply(`✅ Chat resume has been posted to ${targetChannel}!`);
 
         } catch (error) {
             console.error('Error in chatresume command:', error);

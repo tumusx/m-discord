@@ -97,13 +97,15 @@ Get resume for the first week of January 2024 in #general channel.
 
 ### Output
 
-The bot will generate a resume including:
+The bot will post the resume directly to the channel as a message, including:
 - 📅 Date range analyzed
 - 💬 Total message count
 - 👥 Number of unique users
 - 🏆 Top contributors (up to 10 users)
 - 📎 Media statistics (attachments, images, videos, links)
 - 📊 Most active days (top 5)
+
+The user who invoked the command will receive a confirmation message.
 
 ## Permissions
 
@@ -121,6 +123,9 @@ The bot needs the following permissions:
 
 **"I don't have permission to read message history":**
 - The bot needs "Read Message History" permission in the target channel
+
+**"I don't have permission to send messages in that channel":**
+- The bot needs "Send Messages" permission in the target channel to post the resume
 
 **Invalid date format error:**
 - Dates must be in YYYY-MM-DD format (e.g., 2024-01-15)
