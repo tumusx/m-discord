@@ -79,6 +79,8 @@ Generate a chat resume for a specific date range.
 **Parameters:**
 - `start_date` (required): Start date in YYYY-MM-DD format
 - `end_date` (required): End date in YYYY-MM-DD format
+- `start_time` (optional): Start time in HH:MM format (defaults to 00:00)
+- `end_time` (optional): End time in HH:MM format (defaults to 23:59)
 - `channel` (optional): Channel to analyze (defaults to current channel)
 
 **Examples:**
@@ -94,6 +96,18 @@ Get resume for January 2024 in the current channel.
 ```
 
 Get resume for the first week of January 2024 in #general channel.
+
+```
+/chatresume start_date:2024-01-15 end_date:2024-01-15 start_time:09:00 end_time:17:00
+```
+
+Get resume for January 15, 2024, from 9 AM to 5 PM (business hours).
+
+```
+/chatresume start_date:2024-01-01 end_date:2024-01-31 start_time:18:00 end_time:23:59
+```
+
+Get resume for evening messages (6 PM to midnight) during January 2024.
 
 ### Output
 
@@ -131,6 +145,11 @@ The bot needs the following permissions:
 - Dates must be in YYYY-MM-DD format (e.g., 2024-01-15)
 - Start date must be before end date
 - End date cannot be in the future
+
+**Invalid time format error:**
+- Times must be in HH:MM format (e.g., 09:30, 14:45)
+- Use 24-hour format (00:00 to 23:59)
+- Times are optional and default to 00:00 (start) and 23:59 (end)
 
 ## Development
 

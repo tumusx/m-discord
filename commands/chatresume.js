@@ -12,6 +12,14 @@ module.exports = {
             option.setName('end_date')
                 .setDescription('End date (format: YYYY-MM-DD)')
                 .setRequired(true))
+        .addStringOption(option =>
+            option.setName('start_time')
+                .setDescription('Start time (format: HH:MM, optional, defaults to 00:00)')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('end_time')
+                .setDescription('End time (format: HH:MM, optional, defaults to 23:59)')
+                .setRequired(false))
         .addChannelOption(option =>
             option.setName('channel')
                 .setDescription('Channel to get resume from (defaults to current channel)')
@@ -24,6 +32,8 @@ module.exports = {
         try {
             const startDateStr = interaction.options.getString('start_date');
             const endDateStr = interaction.options.getString('end_date');
+            const startTimeStr = interaction.options.getString('start_time') || '00:00';
+            const endTimeStr = interaction.options.getString('end_time') || '23:59';
             const targetChannel = interaction.options.getChannel('channel') || interaction.channel;
 
             // Validate date format
@@ -32,9 +42,15 @@ module.exports = {
                 return await interaction.editReply('❌ Invalid date format. Please use YYYY-MM-DD format.');
             }
 
-            // Parse dates
-            const startDate = new Date(startDateStr + 'T00:00:00Z');
-            const endDate = new Date(endDateStr + 'T23:59:59Z');
+            // Validate time format
+            const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+            if (!timeRegex.test(startTimeStr) || !timeRegex.test(endTimeStr)) {
+                return await interaction.editReply('❌ Invalid time format. Please use HH:MM format (e.g., 09:30, 14:45).');
+            }
+
+            // Parse dates with times
+            const startDate = new Date(startDateStr + 'T' + startTimeStr + ':00Z');
+            const endDate = new Date(endDateStr + 'T' + endTimeStr + ':59Z');
 
             // Validate dates
             if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
@@ -58,13 +74,13 @@ module.exports = {
                 return await interaction.editReply('❌ I don\'t have permission to send messages in that channel.');
             }
 
-            await interaction.editReply(`🔍 Fetching messages from ${targetChannel} between ${startDateStr} and ${endDateStr}...`);
+            await interaction.editReply(`🔍 Fetching messages from ${targetChannel} between ${startDateStr} ${startTimeStr} and ${endDateStr} ${endTimeStr}...`);
 
             // Fetch messages
             const messages = await fetchMessagesInDateRange(targetChannel, startDate, endDate);
 
             if (messages.length === 0) {
-                return await interaction.editReply(`No messages found in ${targetChannel} between ${startDateStr} and ${endDateStr}.`);
+                return await interaction.editReply(`No messages found in ${targetChannel} between ${startDateStr} ${startTimeStr} and ${endDateStr} ${endTimeStr}.`);
             }
 
             // Generate resume
@@ -171,11 +187,15 @@ function generateChatResume(messages, startDate, endDate, channel) {
     
     const linksCount = messages.filter(m => m.content.match(/https?:\/\/[^\s]+/)).length;
 
-    // Format dates
-    const formatDate = (date) => date.toISOString().split('T')[0];
+    // Format dates with time
+    const formatDateTime = (date) => {
+        const dateStr = date.toISOString().split('T')[0];
+        const timeStr = date.toISOString().split('T')[1].substring(0, 5);
+        return `${dateStr} ${timeStr}`;
+    };
 
     let resume = `📊 **Chat Resume for ${channel.name}**\n\n`;
-    resume += `📅 **Period:** ${formatDate(startDate)} to ${formatDate(endDate)}\n`;
+    resume += `📅 **Period:** ${formatDateTime(startDate)} to ${formatDateTime(endDate)}\n`;
     resume += `💬 **Total Messages:** ${totalMessages}\n`;
     resume += `👥 **Unique Users:** ${uniqueAuthors}\n\n`;
     
@@ -190,6 +210,7 @@ function generateChatResume(messages, startDate, endDate, channel) {
     resume += `  • Links: ${linksCount}\n\n`;
 
     // Activity by day
+    const formatDate = (date) => date.toISOString().split('T')[0];
     const messagesByDay = {};
     messages.forEach(msg => {
         const day = formatDate(msg.createdAt);
