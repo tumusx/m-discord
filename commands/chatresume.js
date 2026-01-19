@@ -146,11 +146,23 @@ function generateChatResume(messages, startDate, endDate, channel) {
         .join('\n');
 
     // Count media types
-    const imagesCount = messages.filter(m => m.attachments.size > 0 && 
-        Array.from(m.attachments.values()).some(a => a.contentType?.startsWith('image/'))).length;
-    const videosCount = messages.filter(m => m.attachments.size > 0 && 
-        Array.from(m.attachments.values()).some(a => a.contentType?.startsWith('video/'))).length;
-    const attachmentsCount = messages.filter(m => m.attachments.size > 0).length;
+    let imagesCount = 0;
+    let videosCount = 0;
+    let attachmentsCount = 0;
+    
+    messages.forEach(m => {
+        if (m.attachments.size > 0) {
+            attachmentsCount++;
+            const attachments = Array.from(m.attachments.values());
+            if (attachments.some(a => a.contentType?.startsWith('image/'))) {
+                imagesCount++;
+            }
+            if (attachments.some(a => a.contentType?.startsWith('video/'))) {
+                videosCount++;
+            }
+        }
+    });
+    
     const linksCount = messages.filter(m => m.content.match(/https?:\/\/[^\s]+/)).length;
 
     // Format dates
@@ -198,7 +210,18 @@ function splitMessage(text, maxLength) {
 
     const lines = text.split('\n');
     for (const line of lines) {
-        if (currentChunk.length + line.length + 1 > maxLength) {
+        // Handle case where a single line exceeds maxLength
+        if (line.length > maxLength) {
+            // Push current chunk if it exists
+            if (currentChunk) {
+                chunks.push(currentChunk);
+                currentChunk = '';
+            }
+            // Split the long line into smaller pieces
+            for (let i = 0; i < line.length; i += maxLength) {
+                chunks.push(line.substring(i, i + maxLength));
+            }
+        } else if (currentChunk.length + line.length + 1 > maxLength) {
             if (currentChunk) {
                 chunks.push(currentChunk);
             }
