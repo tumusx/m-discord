@@ -49,6 +49,8 @@ module.exports = {
             }
 
             // Parse dates with times
+            // Note: startDate includes the first second of the start minute (:00)
+            // endDate includes the last second of the end minute (:59) to include all messages in that minute
             const startDate = new Date(startDateStr + 'T' + startTimeStr + ':00Z');
             const endDate = new Date(endDateStr + 'T' + endTimeStr + ':59Z');
 
@@ -187,12 +189,10 @@ function generateChatResume(messages, startDate, endDate, channel) {
     
     const linksCount = messages.filter(m => m.content.match(/https?:\/\/[^\s]+/)).length;
 
-    // Format dates with time
-    const formatDateTime = (date) => {
-        const dateStr = date.toISOString().split('T')[0];
-        const timeStr = date.toISOString().split('T')[1].substring(0, 5);
-        return `${dateStr} ${timeStr}`;
-    };
+    // Helper functions for formatting
+    const formatDate = (date) => date.toISOString().split('T')[0];
+    const formatTime = (date) => date.toISOString().split('T')[1].substring(0, 5);
+    const formatDateTime = (date) => `${formatDate(date)} ${formatTime(date)}`;
 
     let resume = `📊 **Chat Resume for ${channel.name}**\n\n`;
     resume += `📅 **Period:** ${formatDateTime(startDate)} to ${formatDateTime(endDate)}\n`;
@@ -210,7 +210,6 @@ function generateChatResume(messages, startDate, endDate, channel) {
     resume += `  • Links: ${linksCount}\n\n`;
 
     // Activity by day
-    const formatDate = (date) => date.toISOString().split('T')[0];
     const messagesByDay = {};
     messages.forEach(msg => {
         const day = formatDate(msg.createdAt);
